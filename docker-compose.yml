@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6380:6379"
+
+  worker:
+    image: python:3.9
+    container_name: celery-worker
+    working_dir: /app
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    command: >
+      sh -c "pip install -r requirements.txt &&  celery -A tasks worker --pool=solo -l info"
+
+  scheduler:
+    image: python:3.9
+    container_name: celery-beat
+    working_dir: /app
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    command: >
+      sh -c "pip install -r requirements.txt && celery -A scheduler beat --loglevel=info"
